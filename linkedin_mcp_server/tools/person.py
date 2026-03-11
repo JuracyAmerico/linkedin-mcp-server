@@ -87,6 +87,8 @@ def register_person_tools(mcp: FastMCP) -> None:
         keywords: str,
         ctx: Context,
         location: str | None = None,
+        current_company: str | None = None,
+        past_company: str | None = None,
         extractor: LinkedInExtractor = Depends(get_extractor),
     ) -> dict[str, Any]:
         """
@@ -96,6 +98,12 @@ def register_person_tools(mcp: FastMCP) -> None:
             keywords: Search keywords (e.g., "software engineer", "recruiter at Google")
             ctx: FastMCP context for progress reporting
             location: Optional location filter (e.g., "New York", "Remote")
+            current_company: Comma-separated LinkedIn company IDs to filter by current employer.
+                Well-known IDs: Databricks=18373098, Snowflake=9667088, Tableau=11558,
+                Salesforce=1066, Google=1441, Microsoft=1035, Amazon=1586.
+                Example: "18373098" or "18373098,9667088" for multiple companies.
+            past_company: Comma-separated LinkedIn company IDs to filter by past employer.
+                Same IDs as current_company. Example: "11558,1066" for ex-Tableau OR ex-Salesforce.
 
         Returns:
             Dict with url, sections (name -> raw text), and optional references.
@@ -103,16 +111,21 @@ def register_person_tools(mcp: FastMCP) -> None:
         """
         try:
             logger.info(
-                "Searching people: keywords='%s', location='%s'",
+                "Searching people: keywords='%s', location='%s', "
+                "current_company='%s', past_company='%s'",
                 keywords,
                 location,
+                current_company,
+                past_company,
             )
 
             await ctx.report_progress(
                 progress=0, total=100, message="Starting people search"
             )
 
-            result = await extractor.search_people(keywords, location)
+            result = await extractor.search_people(
+                keywords, location, current_company, past_company
+            )
 
             await ctx.report_progress(progress=100, total=100, message="Complete")
 

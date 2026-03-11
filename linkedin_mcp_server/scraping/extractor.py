@@ -768,8 +768,20 @@ class LinkedInExtractor:
         self,
         keywords: str,
         location: str | None = None,
+        current_company: str | None = None,
+        past_company: str | None = None,
     ) -> dict[str, Any]:
         """Search for people and extract the results page.
+
+        Args:
+            keywords: Search keywords.
+            location: Optional location filter.
+            current_company: Comma-separated LinkedIn company IDs to filter
+                by current employer (e.g., "18373098" for Databricks,
+                "18373098,9667088" for Databricks OR Snowflake).
+            past_company: Comma-separated LinkedIn company IDs to filter
+                by past employer (e.g., "11558" for Tableau,
+                "11558,1066" for Tableau OR Salesforce).
 
         Returns:
             {url, sections: {name: text}}
@@ -777,6 +789,16 @@ class LinkedInExtractor:
         params = f"keywords={quote_plus(keywords)}"
         if location:
             params += f"&location={quote_plus(location)}"
+        if current_company:
+            ids = ",".join(
+                f'"{cid.strip()}"' for cid in current_company.split(",")
+            )
+            params += f"&currentCompany={quote_plus(f'[{ids}]')}"
+        if past_company:
+            ids = ",".join(
+                f'"{cid.strip()}"' for cid in past_company.split(",")
+            )
+            params += f"&pastCompany={quote_plus(f'[{ids}]')}"
 
         url = f"https://www.linkedin.com/search/results/people/?{params}"
         extracted = await self.extract_page(url, section_name="search_results")
