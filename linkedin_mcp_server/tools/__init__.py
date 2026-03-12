@@ -11,6 +11,7 @@ Available Tools:
 - Company tools: Company profile and information extraction
 - Job tools: Job posting details and search functionality
 - Analytics tools: Profile views and engagement intelligence
+- Group tools: Group feed scraping for posts and discussions
 
 Architecture:
 - FastMCP integration for MCP-compliant tool registration
