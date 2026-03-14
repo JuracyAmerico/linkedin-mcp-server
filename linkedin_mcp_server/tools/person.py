@@ -89,6 +89,8 @@ def register_person_tools(mcp: FastMCP) -> None:
         location: str | None = None,
         current_company: str | None = None,
         past_company: str | None = None,
+        industry: str | None = None,
+        geo_urn: str | None = None,
         extractor: LinkedInExtractor = Depends(get_extractor),
     ) -> dict[str, Any]:
         """
@@ -104,6 +106,14 @@ def register_person_tools(mcp: FastMCP) -> None:
                 Example: "18373098" or "18373098,9667088" for multiple companies.
             past_company: Comma-separated LinkedIn company IDs to filter by past employer.
                 Same IDs as current_company. Example: "11558,1066" for ex-Tableau OR ex-Salesforce.
+            industry: Comma-separated LinkedIn industry IDs to filter by.
+                Known IDs: Staffing and Recruiting=104, IT Services=96,
+                Computer Software=4, Internet=6, Financial Services=43.
+                Example: "104" or "104,96" for multiple industries.
+            geo_urn: Comma-separated LinkedIn geoUrn IDs for precise location filtering.
+                Overrides location when provided. Known IDs:
+                Greater Toronto Area=90009551, St. Catharines-Niagara=90009548.
+                Example: "90009551" or "90009551,90009548" for multiple regions.
 
         Returns:
             Dict with url, sections (name -> raw text), and optional references.
@@ -112,11 +122,14 @@ def register_person_tools(mcp: FastMCP) -> None:
         try:
             logger.info(
                 "Searching people: keywords='%s', location='%s', "
-                "current_company='%s', past_company='%s'",
+                "current_company='%s', past_company='%s', "
+                "industry='%s', geo_urn='%s'",
                 keywords,
                 location,
                 current_company,
                 past_company,
+                industry,
+                geo_urn,
             )
 
             await ctx.report_progress(
@@ -124,7 +137,8 @@ def register_person_tools(mcp: FastMCP) -> None:
             )
 
             result = await extractor.search_people(
-                keywords, location, current_company, past_company
+                keywords, location, current_company, past_company,
+                industry, geo_urn,
             )
 
             await ctx.report_progress(progress=100, total=100, message="Complete")

@@ -770,24 +770,38 @@ class LinkedInExtractor:
         location: str | None = None,
         current_company: str | None = None,
         past_company: str | None = None,
+        industry: str | None = None,
+        geo_urn: str | None = None,
     ) -> dict[str, Any]:
         """Search for people and extract the results page.
 
         Args:
             keywords: Search keywords.
-            location: Optional location filter.
+            location: Optional location filter (text-based, e.g., "New York").
             current_company: Comma-separated LinkedIn company IDs to filter
                 by current employer (e.g., "18373098" for Databricks,
                 "18373098,9667088" for Databricks OR Snowflake).
             past_company: Comma-separated LinkedIn company IDs to filter
                 by past employer (e.g., "11558" for Tableau,
                 "11558,1066" for Tableau OR Salesforce).
+            industry: Comma-separated LinkedIn industry IDs to filter by.
+                Example: "104" for Staffing and Recruiting,
+                "104,96" for Staffing and Recruiting OR IT Services.
+            geo_urn: Comma-separated LinkedIn geoUrn IDs for precise location
+                filtering. Overrides location when provided.
+                Example: "90009551" for Greater Toronto Area,
+                "90009548" for St. Catharines-Niagara.
 
         Returns:
             {url, sections: {name: text}}
         """
         params = f"keywords={quote_plus(keywords)}"
-        if location:
+        if geo_urn:
+            ids = ",".join(
+                f'"{gid.strip()}"' for gid in geo_urn.split(",")
+            )
+            params += f"&geoUrn={quote_plus(f'[{ids}]')}"
+        elif location:
             params += f"&location={quote_plus(location)}"
         if current_company:
             ids = ",".join(
@@ -799,6 +813,11 @@ class LinkedInExtractor:
                 f'"{cid.strip()}"' for cid in past_company.split(",")
             )
             params += f"&pastCompany={quote_plus(f'[{ids}]')}"
+        if industry:
+            ids = ",".join(
+                f'"{iid.strip()}"' for iid in industry.split(",")
+            )
+            params += f"&industry={quote_plus(f'[{ids}]')}"
 
         url = f"https://www.linkedin.com/search/results/people/?{params}"
         extracted = await self.extract_page(url, section_name="search_results")
