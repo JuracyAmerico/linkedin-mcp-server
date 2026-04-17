@@ -1,37 +1,33 @@
-# Use slim Python base instead of full Playwright image (saves ~300-400 MB)
-# Only Chromium is installed, not Firefox/WebKit
-FROM python:3.14-slim-bookworm@sha256:5404df00cf00e6e7273375f415651837b4d192ac6859c44d3b740888ac798c99
+# -- Stage 1: Build virtual environment --
+FROM python:3.14-slim-bookworm@sha256:55e465cb7e50cd1d7217fcb5386aa87d0356ca2cd790872142ef68d9ef6812b4 AS builder
 
-# Install uv package manager
-COPY --from=ghcr.io/astral-sh/uv:latest@sha256:10902f58a1606787602f303954cea099626a4adb02acbac4c69920fe9d278f82 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:latest@sha256:90bbb3c16635e9627f49eec6539f956d70746c409209041800a0280b93152823 /uv /uvx /bin/
 
-# Create non-root user first (matching original pwuser from Playwright image)
+WORKDIR /app
+COPY pyproject.toml uv.lock README.md ./
+RUN uv sync --frozen --no-install-project --no-dev --no-editable --compile-bytecode
+
+COPY . .
+RUN uv sync --frozen --no-dev --no-editable --compile-bytecode
+
+
+# -- Stage 2: Production runtime --
+FROM python:3.14-slim-bookworm@sha256:55e465cb7e50cd1d7217fcb5386aa87d0356ca2cd790872142ef68d9ef6812b4
+
 RUN useradd -m -s /bin/bash pwuser
 
-# Set working directory and ownership
 WORKDIR /app
-RUN chown pwuser:pwuser /app
 
-# Copy project files with correct ownership
-COPY --chown=pwuser:pwuser . /app
-
-# Install git (needed for git-based dependencies in pyproject.toml)
-RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
-
-# Set browser install location (Patchright reads PLAYWRIGHT_BROWSERS_PATH internally)
+COPY --from=builder /app/.venv /app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/patchright
-# Install dependencies, system libs for Chromium, and patched Chromium binary
-RUN uv sync --frozen && \
-    uv run patchright install-deps chromium && \
-    uv run patchright install chromium && \
-    chmod -R 755 /opt/patchright
 
-# Fix ownership of app directory (venv created by uv)
-RUN chown -R pwuser:pwuser /app
+RUN patchright install-deps chromium && \
+    patchright install chromium && \
+    chmod -R 755 /opt/patchright && \
+    rm -rf /var/lib/apt/lists/*
 
-# Switch to non-root user
 USER pwuser
 
-# Set entrypoint and default arguments
-ENTRYPOINT ["uv", "run", "-m", "linkedin_mcp_server"]
+ENTRYPOINT ["python", "-m", "linkedin_mcp_server"]
 CMD []

@@ -83,7 +83,6 @@ When adding a section to an existing tool (e.g., adding "certifications" to `get
 ### Docs
 
 - [ ] Update tool table in `README.md`
-- [ ] Update tool table in `AGENTS.md`
 - [ ] Update features list in `docs/docker-hub.md`
 - [ ] Update tools array/description in `manifest.json`
 
@@ -112,7 +111,6 @@ When adding an entirely new MCP tool (e.g., `search_companies`):
 ### Docs
 
 - [ ] Update tool table in `README.md`
-- [ ] Update tool table in `AGENTS.md`
 - [ ] Update features list in `docs/docker-hub.md`
 - [ ] Add tool to `tools` array in `manifest.json`
 
@@ -124,7 +122,7 @@ When adding an entirely new MCP tool (e.g., `search_companies`):
 
 ## Workflow
 
-1. [Open an issue](https://github.com/stickerdaniel/linkedin-mcp-server/issues) describing the feature or bug
+1. [Open an issue](https://github.com/stickerdaniel/linkedin-mcp-server/issues) using the correct GitHub issue template. Fill in every section; delete optional sections if not applicable.
 2. Create a branch: `feature/<issue-number>-<short-description>` or `fix/<issue-number>-<short-description>`
 3. Implement, test, and update docs (see checklists above)
 4. Open a PR — AI agents review first, then manual review

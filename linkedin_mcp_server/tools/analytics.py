@@ -9,12 +9,11 @@ import logging
 from typing import Any
 
 from fastmcp import Context, FastMCP
-from fastmcp.dependencies import Depends
 
 from linkedin_mcp_server.constants import TOOL_TIMEOUT_SECONDS
-from linkedin_mcp_server.dependencies import get_extractor
+from linkedin_mcp_server.core.exceptions import AuthenticationError
+from linkedin_mcp_server.dependencies import get_ready_extractor, handle_auth_error
 from linkedin_mcp_server.error_handler import raise_tool_error
-from linkedin_mcp_server.scraping import LinkedInExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +26,11 @@ def register_analytics_tools(mcp: FastMCP) -> None:
         title="Get Profile Views",
         annotations={"readOnlyHint": True, "openWorldHint": False},
         tags={"analytics", "profile"},
+        exclude_args=["extractor"],
     )
     async def get_profile_views(
         ctx: Context,
-        extractor: LinkedInExtractor = Depends(get_extractor),
+        extractor: Any | None = None,
     ) -> dict[str, Any]:
         """
         Get a list of people who recently viewed your LinkedIn profile.
@@ -48,6 +48,9 @@ def register_analytics_tools(mcp: FastMCP) -> None:
             The LLM should parse the raw text to extract individual viewers.
         """
         try:
+            extractor = extractor or await get_ready_extractor(
+                ctx, tool_name="get_profile_views"
+            )
             url = "https://www.linkedin.com/analytics/profile-views/"
 
             logger.info("Scraping profile views analytics page")
@@ -78,5 +81,10 @@ def register_analytics_tools(mcp: FastMCP) -> None:
                 result["references"] = references
             return result
 
+        except AuthenticationError as e:
+            try:
+                await handle_auth_error(e, ctx)
+            except Exception as relogin_exc:
+                raise_tool_error(relogin_exc, "get_profile_views")
         except Exception as e:
             raise_tool_error(e, "get_profile_views")  # NoReturn

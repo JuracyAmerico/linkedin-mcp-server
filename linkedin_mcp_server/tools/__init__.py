@@ -10,6 +10,7 @@ Available Tools:
 - Person tools: LinkedIn profile scraping and analysis
 - Company tools: Company profile and information extraction
 - Job tools: Job posting details and search functionality
+- Messaging tools: Inbox, conversations, search, and sending messages
 - Analytics tools: Profile views and engagement intelligence
 - Group tools: Group feed scraping for posts and discussions
 
